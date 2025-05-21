@@ -1,0 +1,142 @@
+/* Custom styles for Ultravox WebRTC Demo */
+
+/* Transcript Styles */
+.transcript-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  max-width: 80%;
+  position: relative;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.transcript-user {
+  background-color: #e0e7ff; /* Light indigo */
+  color: #4f46e5;
+  margin-left: auto;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.transcript-assistant {
+  background-color: #f3f4f6; /* Light gray */
+  color: #1f2937;
+  margin-right: auto;
+  border-bottom-left-radius: 0.25rem;
+}
+
+/* Connection Status Indicators */
+.status-disconnected {
+  background-color: #9ca3af; /* Gray */
+}
+
+.status-connecting {
+  background-color: #fbbf24; /* Yellow */
+}
+
+.status-connected {
+  background-color: #10b981; /* Green */
+}
+
+.status-error {
+  background-color: #ef4444; /* Red */
+}
+
+/* Call Button Pulse Animation */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+  }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+/* Log Messages */
+.log-entry {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.25rem 0;
+}
+
+.log-info {
+  color: #4b5563;
+}
+
+.log-success {
+  color: #10b981;
+}
+
+.log-warning {
+  color: #f59e0b;
+}
+
+.log-error {
+  color: #ef4444;
+}
+
+/* Audio Indicators */
+.audio-indicator {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.audio-level {
+  width: 4px;
+  height: 10px;
+  background-color: #4f46e5;
+  display: inline-block;
+  margin: 0 1px;
+  border-radius: 1px;
+  transition: height 0.1s ease-in-out;
+}
+
+/* Transcript Animation */
+.fade-in {
+  animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom Volume Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 7px;
+  background: #e5e7eb;
+  border-radius: 5px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4f46e5;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4f46e5;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .transcript-bubble {
+    max-width: 90%;
+  }
+}
