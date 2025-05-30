@@ -6,11 +6,9 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/pion/rtp v1.8.15
-	github.com/pion/webrtc/v3 v3.3.5
 	github.com/pion/webrtc/v4 v4.1.1
 	github.com/stretchr/testify v1.10.0
 	github.com/zaf/g711 v1.4.0
-	gopkg.in/hraban/opus.v2 v2.0.0-20230925203106-0188a62cb302
 )
 
 require (

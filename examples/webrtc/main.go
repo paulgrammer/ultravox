@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,7 +21,6 @@ import (
 	"github.com/pion/rtp"
 	"github.com/pion/webrtc/v4"
 	"github.com/zaf/g711"
-	"gopkg.in/hraban/opus.v2"
 )
 
 const (
@@ -55,9 +53,9 @@ type UltravoxConnection struct {
 
 // WebRTCConnection manages the WebRTC connection
 type WebRTCConnection struct {
-	peerConnection *webrtc.PeerConnection
-	audioTrack     *webrtc.TrackLocalStaticRTP
-	done           chan struct{}
+	pc         *webrtc.PeerConnection
+	audioTrack *webrtc.TrackLocalStaticRTP
+	done       chan struct{}
 }
 
 // SDP message structure for exchanging offers and answers
@@ -183,32 +181,32 @@ func handleSDPOffer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set the remote SessionDescription
-	if err = webrtcConn.peerConnection.SetRemoteDescription(offerMsg.SDP); err != nil {
+	if err = webrtcConn.pc.SetRemoteDescription(offerMsg.SDP); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to set remote description: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	// Create answer
-	answer, err := webrtcConn.peerConnection.CreateAnswer(nil)
+	answer, err := webrtcConn.pc.CreateAnswer(nil)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to create answer: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	// Set local description
-	if err = webrtcConn.peerConnection.SetLocalDescription(answer); err != nil {
+	if err = webrtcConn.pc.SetLocalDescription(answer); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to set local description: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	// Wait for ICE gathering to complete
-	gatherComplete := webrtc.GatheringCompletePromise(webrtcConn.peerConnection)
+	gatherComplete := webrtc.GatheringCompletePromise(webrtcConn.pc)
 	<-gatherComplete
 
 	// Create response
 	responseMsg := SDPMessage{
 		Type: webrtc.SDPTypeAnswer,
-		SDP:  *webrtcConn.peerConnection.LocalDescription(),
+		SDP:  *webrtcConn.pc.LocalDescription(),
 	}
 
 	// Send response
@@ -268,8 +266,22 @@ func setupWebRTC() (*WebRTCConnection, error) {
 		},
 	}
 
+	var webrtcMedia = webrtc.MediaEngine{}
+	if err := webrtcRegisterCodecs(&webrtcMedia); err != nil {
+		return nil, fmt.Errorf("failed to register codecs: %w", err)
+	}
+	settEng := webrtc.SettingEngine{}
+	// We want UDP
+	settEng.DisableActiveTCP(true)
+	// We do not need to deal with DTLS
+	settEng.DisableCertificateFingerprintVerification(true)
+	webrtcAPI := webrtc.NewAPI(
+		webrtc.WithMediaEngine(&webrtcMedia),
+		webrtc.WithSettingEngine(settEng),
+	)
+
 	// Create a new RTCPeerConnection
-	peerConnection, err := webrtc.NewPeerConnection(config)
+	pc, err := webrtcAPI.NewPeerConnection(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create peer connection: %w", err)
 	}
@@ -279,31 +291,50 @@ func setupWebRTC() (*WebRTCConnection, error) {
 
 	// Create the WebRTC connection object
 	webrtcConn := &WebRTCConnection{
-		peerConnection: peerConnection,
-		done:           done,
+		pc:   pc,
+		done: done,
 	}
 
 	// Create a PCM audio track - using PCMU codec for G.711 µ-law
-	audioTrack, err := webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMU, ClockRate: OutputSampleRate}, "audio", "ultravox-webrtc")
+	audioTrack, err := webrtc.NewTrackLocalStaticRTP(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMU}, "audio", "ultravox-webrtc")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create audio track: %w", err)
 	}
 
-	if _, err = peerConnection.AddTrack(audioTrack); err != nil {
+	if _, err = pc.AddTrack(audioTrack); err != nil {
 		return nil, fmt.Errorf("failed to add audio track: %w", err)
 	}
 	webrtcConn.audioTrack = audioTrack
 
 	// Setup peer connection handlers
-	setupPeerConnectionHandlers(peerConnection, audioTrack, done)
+	setupPeerConnectionHandlers(pc, audioTrack, done)
 
 	return webrtcConn, nil
 }
 
+func webrtcRegisterCodecs(webrtcMedia *webrtc.MediaEngine) error {
+	for _, codec := range []webrtc.RTPCodecParameters{
+		{
+			RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMU, ClockRate: 8000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+			PayloadType:        0,
+		},
+		{
+			RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypePCMA, ClockRate: 8000, Channels: 0, SDPFmtpLine: "", RTCPFeedback: nil},
+			PayloadType:        8,
+		},
+	} {
+		if err := webrtcMedia.RegisterCodec(codec, webrtc.RTPCodecTypeAudio); err != nil {
+			return err
+		}
+	}
+	return nil
+
+}
+
 // setupPeerConnectionHandlers sets up handlers for the WebRTC peer connection
-func setupPeerConnectionHandlers(peerConnection *webrtc.PeerConnection, audioTrack *webrtc.TrackLocalStaticRTP, done chan struct{}) {
+func setupPeerConnectionHandlers(pc *webrtc.PeerConnection, audioTrack *webrtc.TrackLocalStaticRTP, done chan struct{}) {
 	// Handle ICE connection state changes
-	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
+	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		log.Printf("Connection State has changed %s", connectionState.String())
 
 		if connectionState == webrtc.ICEConnectionStateConnected {
@@ -322,43 +353,23 @@ func setupPeerConnectionHandlers(peerConnection *webrtc.PeerConnection, audioTra
 	})
 
 	// Handle incoming tracks (audio from browser)
-	peerConnection.OnTrack(func(remoteTrack *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
+	pc.OnTrack(func(remoteTrack *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
 		log.Printf("Track has started, of type %d: %s", remoteTrack.PayloadType(), remoteTrack.Codec().MimeType)
-
-		// Only handle audio tracks
-		if strings.HasPrefix(remoteTrack.Codec().MimeType, "audio/") {
-			log.Println("Got audio track from remote peer")
-			go handleIncomingAudio(remoteTrack)
-		}
+		go handleIncomingAudio(remoteTrack)
 	})
 }
 
 // handleIncomingAudio processes incoming audio from WebRTC
 func handleIncomingAudio(track *webrtc.TrackRemote) {
-	// Create appropriate audio decoder based on codec
-	decoder, err := createAudioDecoder(track.Codec().MimeType)
-	if err != nil {
-		log.Printf("Failed to create audio decoder: %v", err)
-		return
-	}
-
-	buffer := make([]byte, RTPPacketSize)
-	rtpPacket := &rtp.Packet{}
-
 	for {
-		n, _, readErr := track.Read(buffer)
+		rtpPacket, _, readErr := track.ReadRTP()
 		if readErr != nil {
 			log.Printf("Error reading from track: %v", readErr)
 			return
 		}
 
-		if err := rtpPacket.Unmarshal(buffer[:n]); err != nil {
-			log.Printf("Error unmarshalling RTP packet: %v", err)
-			continue
-		}
-
 		// Process the packet based on codec
-		pcmData, err := processAudioPacket(rtpPacket.Payload, track.Codec().MimeType, decoder)
+		pcmData, err := processAudioPacket(rtpPacket.Payload, track.Codec().MimeType)
 		if err != nil {
 			log.Printf("Error processing audio packet: %v", err)
 			continue
@@ -390,21 +401,8 @@ func findActiveUltravoxConnection() *UltravoxConnection {
 	return activeUltravoxConnection
 }
 
-// createAudioDecoder creates an appropriate decoder based on codec type
-func createAudioDecoder(mimeType string) (interface{}, error) {
-	switch mimeType {
-	case webrtc.MimeTypeOpus:
-		return opus.NewDecoder(InputSampleRate, 1) // 8kHz sample rate, mono
-	case webrtc.MimeTypePCMA, webrtc.MimeTypePCMU:
-		// g711 library handles both µ-law and A-law
-		return nil, nil // No stateful decoder needed for G.711
-	default:
-		return nil, fmt.Errorf("unsupported codec: %s", mimeType)
-	}
-}
-
 // processAudioPacket converts audio data based on codec type
-func processAudioPacket(payload []byte, mimeType string, decoder interface{}) ([]byte, error) {
+func processAudioPacket(payload []byte, mimeType string) ([]byte, error) {
 	switch mimeType {
 	case webrtc.MimeTypePCMA:
 		// Convert A-law to PCM
@@ -421,27 +419,6 @@ func processAudioPacket(payload []byte, mimeType string, decoder interface{}) ([
 		for i, sample := range payload {
 			pcmSample := g711.DecodeUlawFrame(sample)
 			binary.LittleEndian.PutUint16(pcmData[i*2:], uint16(pcmSample))
-		}
-		return pcmData, nil
-
-	case webrtc.MimeTypeOpus:
-		// Decode Opus to PCM
-		opusDecoder, ok := decoder.(*opus.Decoder)
-		if !ok {
-			return nil, fmt.Errorf("invalid opus decoder")
-		}
-
-		// Max frame size for Opus
-		pcm := make([]int16, 5760)
-		n, err := opusDecoder.Decode(payload, pcm)
-		if err != nil {
-			return nil, err
-		}
-
-		// Convert to byte array
-		pcmData := make([]byte, n*2)
-		for i := 0; i < n; i++ {
-			binary.LittleEndian.PutUint16(pcmData[i*2:], uint16(pcm[i]))
 		}
 		return pcmData, nil
 
@@ -586,14 +563,7 @@ func processUltravoxAudio(uvConn *UltravoxConnection, pcmData []byte, sequenceNu
 	*sequenceNumber++
 	*timestamp += tsIncrement
 
-	// Marshal and send the packet
-	raw, err := packet.Marshal()
-	if err != nil {
-		log.Printf("Failed to marshal RTP packet: %v", err)
-		return
-	}
-
-	if _, err := uvConn.audioTrack.Write(raw); err != nil {
+	if err := uvConn.audioTrack.WriteRTP(packet); err != nil {
 		log.Printf("Failed to write to track: %v", err)
 	}
 }
