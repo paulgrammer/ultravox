@@ -22,6 +22,9 @@ type CallRequest struct {
 	TimeExceededMessage string           `json:"timeExceededMessage,omitempty"`
 	InactivityMessages  []TimedMessage   `json:"inactivityMessages,omitempty"`
 
+	// Tool configuration
+	SelectedTools []SelectedTool `json:"selectedTools,omitempty"`
+
 	// Medium configuration
 	Medium           *CallMedium `json:"medium,omitempty"`
 	RecordingEnabled bool        `json:"recordingEnabled,omitempty"`
@@ -348,5 +351,280 @@ func WithTemplateLastCallTranscript(transcript string) CallOption {
 func WithCallAgentID(agentID string) CallOption {
 	return func(r *CallRequest) {
 		r.AgentID = agentID
+	}
+}
+
+// Tool-related call options
+func WithCallToolByID(toolID string) CallOption {
+	return func(r *CallRequest) {
+		if r.SelectedTools == nil {
+			r.SelectedTools = []SelectedTool{}
+		}
+		r.SelectedTools = append(r.SelectedTools, SelectedTool{
+			ToolID: toolID,
+		})
+	}
+}
+
+func WithCallToolByName(toolName string) CallOption {
+	return func(r *CallRequest) {
+		if r.SelectedTools == nil {
+			r.SelectedTools = []SelectedTool{}
+		}
+		r.SelectedTools = append(r.SelectedTools, SelectedTool{
+			ToolName: toolName,
+		})
+	}
+}
+
+func WithCallTemporaryTool(tool *BaseToolDefinition) CallOption {
+	return func(r *CallRequest) {
+		if r.SelectedTools == nil {
+			r.SelectedTools = []SelectedTool{}
+		}
+		r.SelectedTools = append(r.SelectedTools, SelectedTool{
+			TemporaryTool: tool,
+		})
+	}
+}
+
+// Medium-specific call options with additional configuration
+func WithCallWebSocketMediumBuffered(inputRate, outputRate, bufferSizeMs int) CallOption {
+	return func(r *CallRequest) {
+		r.Medium = &CallMedium{
+			ServerWebSocket: &WebSocketMedium{
+				InputSampleRate:    inputRate,
+				OutputSampleRate:   outputRate,
+				ClientBufferSizeMs: bufferSizeMs,
+			},
+		}
+	}
+}
+
+// Voice configuration options with advanced settings
+func WithCallElevenLabsVoice(voiceID string, options *ElevenLabsVoiceOptions) CallOption {
+	return func(r *CallRequest) {
+		voice := &ElevenLabsVoice{
+			VoiceID: voiceID,
+		}
+		if options != nil {
+			voice.Model = options.Model
+			voice.Speed = options.Speed
+			voice.UseSpeakerBoost = options.UseSpeakerBoost
+			voice.Style = options.Style
+			voice.SimilarityBoost = options.SimilarityBoost
+			voice.Stability = options.Stability
+			voice.OptimizeStreamingLatency = options.OptimizeStreamingLatency
+			voice.MaxSampleRate = options.MaxSampleRate
+		}
+		r.ExternalVoice = &ExternalVoice{ElevenLabs: voice}
+	}
+}
+
+func WithCallCartesiaVoice(voiceID string, options *CartesiaVoiceOptions) CallOption {
+	return func(r *CallRequest) {
+		voice := &CartesiaVoice{
+			VoiceID: voiceID,
+		}
+		if options != nil {
+			voice.Model = options.Model
+			voice.Speed = options.Speed
+			voice.Emotion = options.Emotion
+			voice.Emotions = options.Emotions
+		}
+		r.ExternalVoice = &ExternalVoice{Cartesia: voice}
+	}
+}
+
+func WithCallPlayHtVoice(userID, voiceID string, options *PlayHtVoiceOptions) CallOption {
+	return func(r *CallRequest) {
+		voice := &PlayHtVoice{
+			UserID:  userID,
+			VoiceID: voiceID,
+		}
+		if options != nil {
+			voice.Model = options.Model
+			voice.Speed = options.Speed
+			voice.Quality = options.Quality
+			voice.Temperature = options.Temperature
+			voice.Emotion = options.Emotion
+			voice.VoiceGuidance = options.VoiceGuidance
+			voice.StyleGuidance = options.StyleGuidance
+			voice.TextGuidance = options.TextGuidance
+			voice.VoiceConditioningSeconds = options.VoiceConditioningSeconds
+		}
+		r.ExternalVoice = &ExternalVoice{PlayHt: voice}
+	}
+}
+
+func WithCallLmntVoice(voiceID string, options *LmntVoiceOptions) CallOption {
+	return func(r *CallRequest) {
+		voice := &LmntVoice{
+			VoiceID: voiceID,
+		}
+		if options != nil {
+			voice.Model = options.Model
+			voice.Speed = options.Speed
+			voice.Conversational = options.Conversational
+		}
+		r.ExternalVoice = &ExternalVoice{Lmnt: voice}
+	}
+}
+
+// Voice options structures for advanced configuration
+type ElevenLabsVoiceOptions struct {
+	Model                    string  `json:"model,omitempty"`
+	Speed                    float64 `json:"speed,omitempty"`
+	UseSpeakerBoost          bool    `json:"useSpeakerBoost,omitempty"`
+	Style                    float64 `json:"style,omitempty"`
+	SimilarityBoost          float64 `json:"similarityBoost,omitempty"`
+	Stability                float64 `json:"stability,omitempty"`
+	OptimizeStreamingLatency int     `json:"optimizeStreamingLatency,omitempty"`
+	MaxSampleRate            int     `json:"maxSampleRate,omitempty"`
+}
+
+type CartesiaVoiceOptions struct {
+	Model    string   `json:"model,omitempty"`
+	Speed    float64  `json:"speed,omitempty"`
+	Emotion  string   `json:"emotion,omitempty"`
+	Emotions []string `json:"emotions,omitempty"`
+}
+
+type PlayHtVoiceOptions struct {
+	Model                    string  `json:"model,omitempty"`
+	Speed                    float64 `json:"speed,omitempty"`
+	Quality                  string  `json:"quality,omitempty"`
+	Temperature              float64 `json:"temperature,omitempty"`
+	Emotion                  float64 `json:"emotion,omitempty"`
+	VoiceGuidance            float64 `json:"voiceGuidance,omitempty"`
+	StyleGuidance            float64 `json:"styleGuidance,omitempty"`
+	TextGuidance             float64 `json:"textGuidance,omitempty"`
+	VoiceConditioningSeconds float64 `json:"voiceConditioningSeconds,omitempty"`
+}
+
+type LmntVoiceOptions struct {
+	Model          string  `json:"model,omitempty"`
+	Speed          float64 `json:"speed,omitempty"`
+	Conversational bool    `json:"conversational,omitempty"`
+}
+
+// Advanced VAD configuration
+func WithCallAdvancedVadSettings(turnEndpoint, minTurn, minInterruption time.Duration, threshold float64) CallOption {
+	return func(r *CallRequest) {
+		r.VadSettings = &VadSettings{
+			TurnEndpointDelay:           UltravoxDuration(turnEndpoint),
+			MinimumTurnDuration:         UltravoxDuration(minTurn),
+			MinimumInterruptionDuration: UltravoxDuration(minInterruption),
+			FrameActivationThreshold:    threshold,
+		}
+	}
+}
+
+// Message creation helpers
+func NewUserMessage(text string, medium OutputMediumType) Message {
+	return Message{
+		Role:   string(MessageRoleUser),
+		Text:   text,
+		Medium: medium,
+	}
+}
+
+func NewAgentMessage(text string, medium OutputMediumType) Message {
+	return Message{
+		Role:   string(MessageRoleAgent),
+		Text:   text,
+		Medium: medium,
+	}
+}
+
+func NewToolCallMessage(toolName, invocationID, arguments string) Message {
+	return Message{
+		Role:         string(MessageRoleToolCall),
+		ToolName:     toolName,
+		InvocationID: invocationID,
+		Text:         arguments,
+	}
+}
+
+func NewToolResultMessage(toolName, invocationID, result string) Message {
+	return Message{
+		Role:         string(MessageRoleToolResult),
+		ToolName:     toolName,
+		InvocationID: invocationID,
+		Text:         result,
+	}
+}
+
+// Tool creation helpers
+func NewHTTPTool(name, description, baseURL, method string) *BaseToolDefinition {
+	return &BaseToolDefinition{
+		ModelToolName: name,
+		Description:   description,
+		HTTP: &BaseHTTPToolDetails{
+			BaseURLPattern: baseURL,
+			HTTPMethod:     method,
+		},
+	}
+}
+
+func NewClientTool(name, description string) *BaseToolDefinition {
+	return &BaseToolDefinition{
+		ModelToolName: name,
+		Description:   description,
+		Client:        &BaseClientToolDetails{},
+	}
+}
+
+func NewDataConnectionTool(name, description string) *BaseToolDefinition {
+	return &BaseToolDefinition{
+		ModelToolName:  name,
+		Description:    description,
+		DataConnection: &BaseDataConnectionToolDetails{},
+	}
+}
+
+// Parameter creation helpers
+func NewDynamicParameter(name string, location ParameterLocation, schema interface{}, required bool) DynamicParameter {
+	return DynamicParameter{
+		Name:     name,
+		Location: location,
+		Schema:   schema,
+		Required: required,
+	}
+}
+
+func NewStaticParameter(name string, location ParameterLocation, value interface{}) StaticParameter {
+	return StaticParameter{
+		Name:     name,
+		Location: location,
+		Value:    value,
+	}
+}
+
+func NewAutomaticParameter(name string, location ParameterLocation, knownValue KnownParameterValue) AutomaticParameter {
+	return AutomaticParameter{
+		Name:       name,
+		Location:   location,
+		KnownValue: knownValue,
+	}
+}
+
+// Channel mode constants for data connections
+const (
+	ChannelModeUnspecified ChannelModeType = "CHANNEL_MODE_UNSPECIFIED"
+	ChannelModeMixed       ChannelModeType = "CHANNEL_MODE_MIXED"
+	ChannelModeSeparated   ChannelModeType = "CHANNEL_MODE_SEPARATED"
+)
+
+type ChannelModeType string
+
+// Update DataConnectionAudioConfig to use the enum
+func NewDataConnectionConfigWithChannelMode(websocketURL string, sampleRate int, channelMode ChannelModeType) *DataConnectionConfig {
+	return &DataConnectionConfig{
+		WebsocketURL: websocketURL,
+		AudioConfig: &DataConnectionAudioConfig{
+			SampleRate:  sampleRate,
+			ChannelMode: string(channelMode),
+		},
 	}
 }
