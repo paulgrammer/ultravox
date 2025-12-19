@@ -3,72 +3,72 @@ package ultravox
 import "time"
 
 type TemplateContext struct {
-	UserFirstname      string `json:"userFirstname,omitempty"`
-	LastCallTranscript string `json:"lastCallTranscript,omitempty"`
+	UserFirstname      string `json:"userFirstname,omitempty" yaml:"userFirstname,omitempty"`
+	LastCallTranscript string `json:"lastCallTranscript,omitempty" yaml:"lastCallTranscript,omitempty"`
 }
 
 // CallRequest represents the request structure for initiating a call
 type CallRequest struct {
 	// Basic properties
-	SystemPrompt        string           `json:"systemPrompt,omitempty"`
-	Temperature         float64          `json:"temperature,omitempty"`
-	Model               string           `json:"model,omitempty"`
-	Voice               string           `json:"voice,omitempty"`
-	ExternalVoice       *ExternalVoice   `json:"externalVoice,omitempty"`
-	LanguageHint        string           `json:"languageHint,omitempty"`
-	InitialMessages     []Message        `json:"initialMessages,omitempty"`
-	JoinTimeout         UltravoxDuration `json:"joinTimeout,omitempty"`
-	MaxDuration         UltravoxDuration `json:"maxDuration,omitempty"`
-	TimeExceededMessage string           `json:"timeExceededMessage,omitempty"`
-	InactivityMessages  []TimedMessage   `json:"inactivityMessages,omitempty"`
+	SystemPrompt        string           `json:"systemPrompt,omitempty" yaml:"systemPrompt,omitempty"`
+	Temperature         float64          `json:"temperature,omitempty" yaml:"temperature,omitempty"`
+	Model               string           `json:"model,omitempty" yaml:"model,omitempty"`
+	Voice               string           `json:"voice,omitempty" yaml:"voice,omitempty"`
+	ExternalVoice       *ExternalVoice   `json:"externalVoice,omitempty" yaml:"externalVoice,omitempty"`
+	LanguageHint        string           `json:"languageHint,omitempty" yaml:"languageHint,omitempty"`
+	InitialMessages     []Message        `json:"initialMessages,omitempty" yaml:"initialMessages,omitempty"`
+	JoinTimeout         UltravoxDuration `json:"joinTimeout,omitempty" yaml:"joinTimeout,omitempty"`
+	MaxDuration         UltravoxDuration `json:"maxDuration,omitempty" yaml:"maxDuration,omitempty"`
+	TimeExceededMessage string           `json:"timeExceededMessage,omitempty" yaml:"timeExceededMessage,omitempty"`
+	InactivityMessages  []TimedMessage   `json:"inactivityMessages,omitempty" yaml:"inactivityMessages,omitempty"`
 
 	// Tool configuration
-	SelectedTools []SelectedTool `json:"selectedTools,omitempty"`
+	SelectedTools []SelectedTool `json:"selectedTools,omitempty" yaml:"selectedTools,omitempty"`
 
 	// Medium configuration
-	Medium           *CallMedium `json:"medium,omitempty"`
-	RecordingEnabled bool        `json:"recordingEnabled,omitempty"`
+	Medium           *CallMedium `json:"medium,omitempty" yaml:"medium,omitempty"`
+	RecordingEnabled bool        `json:"recordingEnabled,omitempty" yaml:"recordingEnabled,omitempty"`
 
 	// First speaker configuration
-	FirstSpeaker         FirstSpeakerType      `json:"firstSpeaker,omitempty"` // Deprecated
-	InitialOutputMedium  OutputMediumType      `json:"initialOutputMedium,omitempty"`
-	FirstSpeakerSettings *FirstSpeakerSettings `json:"firstSpeakerSettings,omitempty"`
+	FirstSpeaker         FirstSpeakerType      `json:"firstSpeaker,omitempty" yaml:"firstSpeaker,omitempty"` // Deprecated
+	InitialOutputMedium  OutputMediumType      `json:"initialOutputMedium,omitempty" yaml:"initialOutputMedium,omitempty"`
+	FirstSpeakerSettings *FirstSpeakerSettings `json:"firstSpeakerSettings,omitempty" yaml:"firstSpeakerSettings,omitempty"`
 
 	// Advanced settings
-	VadSettings          *VadSettings          `json:"vadSettings,omitempty"`
-	ExperimentalSettings interface{}           `json:"experimentalSettings,omitempty"`
-	Metadata             map[string]string     `json:"metadata,omitempty"`
-	InitialState         interface{}           `json:"initialState,omitempty"`
-	DataConnection       *DataConnectionConfig `json:"dataConnection,omitempty"`
+	VadSettings          *VadSettings          `json:"vadSettings,omitempty" yaml:"vadSettings,omitempty"`
+	ExperimentalSettings interface{}           `json:"experimentalSettings,omitempty" yaml:"experimentalSettings,omitempty"`
+	Metadata             map[string]string     `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+	InitialState         interface{}           `json:"initialState,omitempty" yaml:"initialState,omitempty"`
+	DataConnection       *DataConnectionConfig `json:"dataConnection,omitempty" yaml:"dataConnection,omitempty"`
 
 	// For creating a call from a prior call
-	PriorCallId          string `json:"priorCallId,omitempty"`
-	EnableGreetingPrompt bool   `json:"enableGreetingPrompt,omitempty"`
+	PriorCallId          string `json:"priorCallId,omitempty" yaml:"priorCallId,omitempty"`
+	EnableGreetingPrompt bool   `json:"enableGreetingPrompt,omitempty" yaml:"enableGreetingPrompt,omitempty"`
 
 	// For Agent Calls
-	AgentID         string           `json:"-"`
-	TemplateContext *TemplateContext `json:"templateContext,omitempty"`
+	AgentID         string           `json:"-" yaml:"-"`
+	TemplateContext *TemplateContext `json:"templateContext,omitempty" yaml:"templateContext,omitempty"`
 }
 
 // Call contains the response from a call creation request
 type Call struct {
-	CallID               string                `json:"callId"`
-	ClientVersion        string                `json:"clientVersion,omitempty"`
-	JoinURL              string                `json:"joinUrl"`
-	Created              string                `json:"created"`
-	Joined               string                `json:"joined,omitempty"`
-	Ended                string                `json:"ended,omitempty"`
-	EndReason            string                `json:"endReason,omitempty"`
-	MaxDuration          UltravoxDuration      `json:"maxDuration"`
-	JoinTimeout          UltravoxDuration      `json:"joinTimeout"`
-	FirstSpeaker         FirstSpeakerType      `json:"firstSpeaker,omitempty"`
-	FirstSpeakerSettings *FirstSpeakerSettings `json:"firstSpeakerSettings,omitempty"`
-	InitialOutputMedium  OutputMediumType      `json:"initialOutputMedium,omitempty"`
-	Medium               *CallMedium           `json:"medium,omitempty"`
-	RecordingEnabled     bool                  `json:"recordingEnabled"`
-	ErrorCount           int                   `json:"errorCount"`
-	ShortSummary         string                `json:"shortSummary,omitempty"`
-	Summary              string                `json:"summary,omitempty"`
+	CallID               string                `json:"callId" yaml:"callId"`
+	ClientVersion        string                `json:"clientVersion,omitempty" yaml:"clientVersion,omitempty"`
+	JoinURL              string                `json:"joinUrl" yaml:"joinUrl"`
+	Created              string                `json:"created" yaml:"created"`
+	Joined               string                `json:"joined,omitempty" yaml:"joined,omitempty"`
+	Ended                string                `json:"ended,omitempty" yaml:"ended,omitempty"`
+	EndReason            string                `json:"endReason,omitempty" yaml:"endReason,omitempty"`
+	MaxDuration          UltravoxDuration      `json:"maxDuration" yaml:"maxDuration"`
+	JoinTimeout          UltravoxDuration      `json:"joinTimeout" yaml:"joinTimeout"`
+	FirstSpeaker         FirstSpeakerType      `json:"firstSpeaker,omitempty" yaml:"firstSpeaker,omitempty"`
+	FirstSpeakerSettings *FirstSpeakerSettings `json:"firstSpeakerSettings,omitempty" yaml:"firstSpeakerSettings,omitempty"`
+	InitialOutputMedium  OutputMediumType      `json:"initialOutputMedium,omitempty" yaml:"initialOutputMedium,omitempty"`
+	Medium               *CallMedium           `json:"medium,omitempty" yaml:"medium,omitempty"`
+	RecordingEnabled     bool                  `json:"recordingEnabled" yaml:"recordingEnabled"`
+	ErrorCount           int                   `json:"errorCount" yaml:"errorCount"`
+	ShortSummary         string                `json:"shortSummary,omitempty" yaml:"shortSummary,omitempty"`
+	Summary              string                `json:"summary,omitempty" yaml:"summary,omitempty"`
 }
 
 // CallOption defines a function that modifies a call request
@@ -473,39 +473,39 @@ func WithCallLmntVoice(voiceID string, options *LmntVoiceOptions) CallOption {
 
 // Voice options structures for advanced configuration
 type ElevenLabsVoiceOptions struct {
-	Model                    string  `json:"model,omitempty"`
-	Speed                    float64 `json:"speed,omitempty"`
-	UseSpeakerBoost          bool    `json:"useSpeakerBoost,omitempty"`
-	Style                    float64 `json:"style,omitempty"`
-	SimilarityBoost          float64 `json:"similarityBoost,omitempty"`
-	Stability                float64 `json:"stability,omitempty"`
-	OptimizeStreamingLatency int     `json:"optimizeStreamingLatency,omitempty"`
-	MaxSampleRate            int     `json:"maxSampleRate,omitempty"`
+	Model                    string  `json:"model,omitempty" yaml:"model,omitempty"`
+	Speed                    float64 `json:"speed,omitempty" yaml:"speed,omitempty"`
+	UseSpeakerBoost          bool    `json:"useSpeakerBoost,omitempty" yaml:"useSpeakerBoost,omitempty"`
+	Style                    float64 `json:"style,omitempty" yaml:"style,omitempty"`
+	SimilarityBoost          float64 `json:"similarityBoost,omitempty" yaml:"similarityBoost,omitempty"`
+	Stability                float64 `json:"stability,omitempty" yaml:"stability,omitempty"`
+	OptimizeStreamingLatency int     `json:"optimizeStreamingLatency,omitempty" yaml:"optimizeStreamingLatency,omitempty"`
+	MaxSampleRate            int     `json:"maxSampleRate,omitempty" yaml:"maxSampleRate,omitempty"`
 }
 
 type CartesiaVoiceOptions struct {
-	Model    string   `json:"model,omitempty"`
-	Speed    float64  `json:"speed,omitempty"`
-	Emotion  string   `json:"emotion,omitempty"`
-	Emotions []string `json:"emotions,omitempty"`
+	Model    string   `json:"model,omitempty" yaml:"model,omitempty"`
+	Speed    float64  `json:"speed,omitempty" yaml:"speed,omitempty"`
+	Emotion  string   `json:"emotion,omitempty" yaml:"emotion,omitempty"`
+	Emotions []string `json:"emotions,omitempty" yaml:"emotions,omitempty"`
 }
 
 type PlayHtVoiceOptions struct {
-	Model                    string  `json:"model,omitempty"`
-	Speed                    float64 `json:"speed,omitempty"`
-	Quality                  string  `json:"quality,omitempty"`
-	Temperature              float64 `json:"temperature,omitempty"`
-	Emotion                  float64 `json:"emotion,omitempty"`
-	VoiceGuidance            float64 `json:"voiceGuidance,omitempty"`
-	StyleGuidance            float64 `json:"styleGuidance,omitempty"`
-	TextGuidance             float64 `json:"textGuidance,omitempty"`
-	VoiceConditioningSeconds float64 `json:"voiceConditioningSeconds,omitempty"`
+	Model                    string  `json:"model,omitempty" yaml:"model,omitempty"`
+	Speed                    float64 `json:"speed,omitempty" yaml:"speed,omitempty"`
+	Quality                  string  `json:"quality,omitempty" yaml:"quality,omitempty"`
+	Temperature              float64 `json:"temperature,omitempty" yaml:"temperature,omitempty"`
+	Emotion                  float64 `json:"emotion,omitempty" yaml:"emotion,omitempty"`
+	VoiceGuidance            float64 `json:"voiceGuidance,omitempty" yaml:"voiceGuidance,omitempty"`
+	StyleGuidance            float64 `json:"styleGuidance,omitempty" yaml:"styleGuidance,omitempty"`
+	TextGuidance             float64 `json:"textGuidance,omitempty" yaml:"textGuidance,omitempty"`
+	VoiceConditioningSeconds float64 `json:"voiceConditioningSeconds,omitempty" yaml:"voiceConditioningSeconds,omitempty"`
 }
 
 type LmntVoiceOptions struct {
-	Model          string  `json:"model,omitempty"`
-	Speed          float64 `json:"speed,omitempty"`
-	Conversational bool    `json:"conversational,omitempty"`
+	Model          string  `json:"model,omitempty" yaml:"model,omitempty"`
+	Speed          float64 `json:"speed,omitempty" yaml:"speed,omitempty"`
+	Conversational bool    `json:"conversational,omitempty" yaml:"conversational,omitempty"`
 }
 
 // Advanced VAD configuration
